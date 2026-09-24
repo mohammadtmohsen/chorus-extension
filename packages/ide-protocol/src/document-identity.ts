@@ -1,0 +1,245 @@
+/**
+ * What a document *is*, when it is not simply a file on disk.
+ *
+ * The extension used to ask `uriScheme === 'file'` and refuse everything else,
+ * which is why a merge request diff and the left pane of a git diff both
+ * reported nothing. They are ordinary `TextEditor`s — `vscode.diff` opens two
+ * of them — so the selection was always there to read. What was missing is a
+ * way to say *which version of the file* the lines belong to.
+ *
+ * Pure, and free of any `vscode` import, so the parsing can be tested against
+ * real captured URI strings rather than through a mock of the editor.
+ *
+ * **An allowlist of shapes we have actually read, deliberately not Claude
+ * Code's blocklist.** Its extension accepts every scheme it has not explicitly
+ * excluded and sends `uri.fsPath`, which for a `gl-review:` document is
+ * `/src/app.ts` — repo-relative, pointing nowhere. That is invisible there
+ * because nothing downstream checks it; here Electron main re-validates every
+ * path, so a guessed shape becomes a silent `unmatched` two processes away.
+ * A scheme we have not parsed yields nothing, which the pill can explain.
+ */
+
+import { hasRoot, type Platform } from './paths.js'
+import { CHANGE_TYPES, type ChangeType, type Provenance } from './protocol.js'
+
+export type { Platform, Provenance }
+
+/** The parts of a `vscode.Uri` this needs. `query` is already decoded there. */
+export interface DocumentUri {
+  readonly scheme: string
+  readonly path: string
+  readonly query: string
+  readonly fsPath: string
+}
+
+export interface ResolvedDocument {
+  /** An absolute path in the working tree — where the file lives, or would. */
+  readonly filePath: string
+  readonly provenance: Provenance
+}
+
+/** `JSON.parse` that answers with a value instead of throwing. */
+function parseQuery(query: string): Record<string, unknown> | null {
+  if (query === '') return null
+  let parsed: unknown
+  try {
+    parsed = JSON.parse(query)
+  } catch {
+    return null
+  }
+  if (typeof parsed !== 'object' || parsed === null || Array.isArray(parsed)) return null
+  return parsed as Record<string, unknown>
+}
+
+function stringField(source: Record<string, unknown>, key: string): string | null {
+  const value = source[key]
+  return typeof value === 'string' && value !== '' ? value : null
+}
+
+/**
+ * Join a repo-relative path onto its root, refusing anything that could climb
+ * out of it.
+ *
+ * A `..` segment is rejected rather than resolved: GitLab's `new_path` is a
+ * path inside the repository and never legitimately contains one, so the only
+ * thing normalising would buy is a way to be wrong quietly. Main re-checks the
+ * result regardless — this is disclosure minimisation, not the security
+ * boundary.
+ */
+export function joinInside(root: string, relative: string, platform: Platform): string | null {
+  /*
+   * `hasRoot`, not `startsWith('/')`. The old check rejected every Windows root
+   * outright — `c:\repo` does not start with `/`, and neither does
+   * `\\server\share\repo` — so this returned null for every GitLab review
+   * pane on Windows.
+   */
+  if (root === '' || !hasRoot(root, platform)) return null
+
+  /*
+   * Split on **both** separators. Splitting on `/` alone left a backslash-
+   * separated path as one opaque segment, which walked straight past the `..`
+   * guard below: `..\..\etc\passwd` contains no element equal to `..`. Main
+   * re-checks the result, so this was disclosure minimisation failing rather
+   * than a hole — but failing silently, and only on Windows.
+   */
+  const segments = relative.split(/[\\/]/).filter((s) => s !== '' && s !== '.')
+  if (segments.length === 0) return null
+  if (segments.includes('..')) return null
+  // A drive-relative or rooted segment would escape too: `C:x`, or a leading
+  // separator that survived the filter as an absolute-looking first element.
+  if (segments.some((s) => hasRoot(s, platform) || /^[a-zA-Z]:/.test(s))) return null
+
+  const sep = separatorOf(root)
+  const base = root.endsWith(sep) ? root.slice(0, -1) : root
+  return `${base}${sep}${segments.join(sep)}`
+}
+
+/** Whichever separator the root is already written with; `/` when it has none. */
+function separatorOf(root: string): string {
+  return root.includes('\\') && !root.includes('/') ? '\\' : '/'
+}
+
+function isChangeType(value: unknown): value is ChangeType {
+  return typeof value === 'string' && CHANGE_TYPES.includes(value as ChangeType)
+}
+
+/**
+ * The built-in Git extension's `git:` URIs.
+ *
+ * `toGitUri` puts the **absolute** path in `query.path` and the ref beside it;
+ * `uri.path` itself may have `.git` appended to keep the language id neutral,
+ * which is why the query is the only thing read here.
+ *
+ * An empty ref means the working tree — the same bytes as the file — so it
+ * reports `worktree` rather than inventing a version that would need
+ * qualifying.
+ */
+function resolveGit(uri: DocumentUri, platform: Platform): ResolvedDocument | null {
+  const query = parseQuery(uri.query)
+  if (query === null) return null
+  const filePath = stringField(query, 'path')
+  // `hasRoot` rather than a leading `/`: on Windows the built-in Git extension
+  // puts `c:\...` here, so the old check made every `git:` diff pane resolve to
+  // null — the exact regression protocol 2 existed to fix, one platform over.
+  if (typeof filePath !== 'string' || !hasRoot(filePath, platform)) return null
+
+  const ref = query['ref']
+  if (typeof ref !== 'string') return null
+  if (ref === '') return { filePath, provenance: { kind: 'worktree' } }
+  return { filePath, provenance: { kind: 'ref', ref } }
+}
+
+/**
+ * GitLab's merge request diff panes.
+ *
+ * `toReviewUri` builds `gl-review:<repo-relative path>?<sorted json>`, so the
+ * path has to be rejoined to the `repositoryRoot` the query carries — its
+ * `fsPath` is the relative path wearing a leading slash and is never a real
+ * location.
+ *
+ * `commit` is the only thing that tells the two panes apart: base and head
+ * carry `base_commit_sha` and `head_commit_sha` for the same file, and the
+ * paths differ only for a rename. It is also what makes the selection
+ * reproducible — `git show <commit>:<path>` is what the GitLab extension reads
+ * itself, from the local object store, before falling back to the API.
+ *
+ * `exists` is about *this side of the diff* having content, not about the file
+ * being on disk: it is `!new_file` for base and `!deleted_file` for head. With
+ * no content and no commit this is the blank pane opposite an added or deleted
+ * file — GitLab's own `isEmptyFileUri` — and there is nothing there to
+ * reference.
+ */
+function resolveReview(uri: DocumentUri, platform: Platform): ResolvedDocument | null {
+  const query = parseQuery(uri.query)
+  if (query === null) return null
+
+  const commit = stringField(query, 'commit')
+  const exists = stringField(query, 'exists')
+  if (commit === null || exists === null) return null
+
+  const root = stringField(query, 'repositoryRoot')
+  if (root === null) return null
+  const filePath = joinInside(root, uri.path, platform)
+  if (filePath === null) return null
+
+  /*
+   * Validated and then dropped. It is a shape check — an unexpected value means
+   * this is not the URI we read out of the bundle, and refusing beats
+   * misparsing — but nothing downstream would read it. The commit already
+   * covers what it would explain: `git show <commit>:<old path>` works for a
+   * renamed file too.
+   */
+  if (!isChangeType(query['changeType'])) return null
+  return { filePath, provenance: { kind: 'review', commit } }
+}
+
+/**
+ * Everything a document can be, or `null` when it is not one this extension
+ * can name.
+ *
+ * `untitled:` is deliberately absent: it has no path at all, so there is
+ * nothing an agent could open and nothing to check against a project root.
+ * Notebook cells are absent because a cell needs an index carried through the
+ * reference to mean anything, which is its own decision.
+ */
+export function resolveDocument(
+  uri: DocumentUri,
+  /*
+   * Named by the caller, always — there is no default and there must not be one.
+   *
+   * Everything below decides what counts as an absolute path, and that answer
+   * differs by platform — so a suite using POSIX fixtures asserted its own host
+   * rather than its argument, and went red the first time it ran on Windows.
+   *
+   * It used to default to `process.platform`, which is a Node global this module
+   * is no longer allowed to assume: it is bundled into the workbench renderer,
+   * where `process` does not exist and evaluating the default throws
+   * `ReferenceError` before the body runs. See `paths.ts` for the whole of what
+   * that cost.
+   */
+  platform: Platform
+): ResolvedDocument | null {
+  switch (uri.scheme) {
+    case 'file':
+      return uri.fsPath === '' ? null : { filePath: uri.fsPath, provenance: { kind: 'worktree' } }
+    /*
+     * The embedded workbench's own scheme, and the reason this resolver moved
+     * into a shared package.
+     *
+     * Chorus opens each project through a remote extension host, so an ordinary
+     * file there is `vscode-remote://<authority>/<path>` rather than `file:`.
+     * The VS Code extension never sees this scheme — it runs inside a VS Code
+     * that already resolved it — so this arm is inert there and load-bearing
+     * here.
+     *
+     * **`fsPath`, and `path` was wrong on Windows.** This used to read `uri.path`
+     * on the reasoning that `fsPath` on a URI with an authority yields a
+     * UNC-style `//127.0.0.1:52124/Users/…`. That is true only for `file:` —
+     * `uriToFsPath` guards that branch with `uri.scheme === 'file'`, so a
+     * `vscode-remote:` URI never takes it and the authority never appears.
+     *
+     * What `path` *does* carry on Windows is the drive letter behind a leading
+     * slash: `/C:/Users/me/proj/app.ts`. No project root matches that — the root
+     * is `C:\Users\me\proj` — so every file in every project on Windows resolved
+     * to a path outside its own project and reported `outside-root`. `fsPath`
+     * strips exactly that slash, giving `c:/Users/…`, which `isInside` folds to
+     * the root's case and separators.
+     *
+     * Validated rather than trusted: `hasRoot` is what rejects the shapes that
+     * are not locatable — an empty path, and a Windows path with no drive.
+     *
+     * Worktree, unambiguously: this *is* the file on the server's disk, which is
+     * the same disk the project root names.
+     */
+    case 'vscode-remote':
+      return hasRoot(uri.fsPath, platform)
+        ? { filePath: uri.fsPath, provenance: { kind: 'worktree' } }
+        : null
+    case 'git':
+      return resolveGit(uri, platform)
+    case 'gl-review':
+      return resolveReview(uri, platform)
+    default:
+      return null
+  }
+}

@@ -1,0 +1,9 @@
+node_modules/
+dist/
+*.tsbuildinfo
+*.vsix
+.DS_Store
+.claude/settings.local.json
+
+apps/extension/engine/
+apps/extension/webview/

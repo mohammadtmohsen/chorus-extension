@@ -1,0 +1,26 @@
+{
+  "name": "chorus-extension",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Collaboration between coding agents inside VS Code.",
+  "license": "MIT",
+  "packageManager": "pnpm@11.20.0",
+  "engines": {
+    "node": ">=22.13.0"
+  },
+  "scripts": {
+    "build": "pnpm -r build",
+    "typecheck": "pnpm -r typecheck",
+    "test": "pnpm -r build && vitest run",
+    "package:vsix": "pnpm -r build && node scripts/package-extension.mjs",
+    "format:check": "prettier --check ."
+  },
+  "devDependencies": {
+    "@types/node": "^22.18.0",
+    "@vscode/vsce": "^3.2.0",
+    "esbuild": "^0.25.0",
+    "typescript": "6.0.3",
+    "vitest": "^4.1.10"
+  }
+}

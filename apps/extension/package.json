@@ -1,0 +1,53 @@
+{
+  "name": "chorus-collaboration",
+  "displayName": "%displayName%",
+  "description": "%description%",
+  "version": "0.0.0",
+  "private": true,
+  "publisher": "chorus",
+  "license": "MIT",
+  "type": "module",
+  "engines": {
+    "vscode": "^1.94.0"
+  },
+  "categories": ["Other"],
+  "main": "./dist/extension.js",
+  "extensionKind": ["workspace"],
+  "l10n": "./l10n",
+  "capabilities": {
+    "untrustedWorkspaces": {
+      "supported": false,
+      "description": "%capabilities.untrustedWorkspaces.description%"
+    },
+    "virtualWorkspaces": {
+      "supported": false,
+      "description": "%capabilities.virtualWorkspaces.description%"
+    }
+  },
+  "contributes": {
+    "commands": [
+      {
+        "command": "chorusCollaboration.openConversation",
+        "title": "%command.openConversation.title%"
+      },
+      {
+        "command": "chorusCollaboration.setDeepSeekKey",
+        "title": "%command.setDeepSeekKey.title%"
+      }
+    ]
+  },
+  "scripts": {
+    "build": "tsc -b tsconfig.build.json",
+    "typecheck": "tsc -p tsconfig.json",
+    "test": "vitest run",
+    "clean": "node ../../scripts/rm.mjs dist *.tsbuildinfo"
+  },
+  "dependencies": {
+    "@chorus/collaboration-protocol": "workspace:*",
+    "@chorus/transport": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/node": "^22.20.1",
+    "@types/vscode": "^1.94.0"
+  }
+}

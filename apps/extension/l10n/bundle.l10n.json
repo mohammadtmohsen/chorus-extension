@@ -1,0 +1,21 @@
+{
+  "Open a single folder before starting a conversation.": "Open a single folder before starting a conversation.",
+  "The engine is missing from this install: {0}": "The engine is missing from this install: {0}",
+  "The engine refused to open a conversation: {0}": "The engine refused to open a conversation: {0}",
+  "The engine did not open a conversation: {0}": "The engine did not open a conversation: {0}",
+  "Started conversation {0}. Nothing draws it yet — the transcript interface is still to come.": "Started conversation {0}. Nothing draws it yet — the transcript interface is still to come.",
+  "The engine did not report a descriptor in time.": "The engine did not report a descriptor in time.",
+  "The engine reported a descriptor this client does not understand.": "The engine reported a descriptor this client does not understand.",
+  "The engine speaks a different protocol version.": "The engine speaks a different protocol version.",
+  "The engine did not answer in time.": "The engine did not answer in time.",
+  "The engine answered with something this client did not expect.": "The engine answered with something this client did not expect.",
+  "The engine stopped before answering.": "The engine stopped before answering.",
+  "That command had already been applied.": "That command had already been applied.",
+  "The engine could not tell whether that command was applied. Read the conversation before repeating it.": "The engine could not tell whether that command was applied. Read the conversation before repeating it.",
+  "Paste your DeepSeek API key. It is kept in VS Code SecretStorage, never in a settings file, and sent only to the engine.": "Paste your DeepSeek API key. It is kept in VS Code SecretStorage, never in a settings file, and sent only to the engine.",
+  "A key cannot be empty.": "A key cannot be empty.",
+  "Saved. Open a single folder, then run this again to hand it to the engine.": "Saved. Open a single folder, then run this again to hand it to the engine.",
+  "The engine refused the key: {0}": "The engine refused the key: {0}",
+  "DeepSeek is ready. Address it with @deepseek in a conversation.": "DeepSeek is ready. Address it with @deepseek in a conversation.",
+  "Started conversation {0}. Nothing draws it yet — the transcript interface is still to come.": "Started conversation {0}. Nothing draws it yet — the transcript interface is still to come."
+}

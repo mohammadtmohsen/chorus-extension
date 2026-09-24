@@ -1,0 +1,29 @@
+{
+  "name": "@chorus/transcript",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Reduces the event log into the entries a transcript draws. Browser-safe: no native modules, no Node builtins.",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc -b tsconfig.build.json",
+    "typecheck": "tsc -p tsconfig.json",
+    "test": "vitest run",
+    "clean": "node ../../scripts/rm.mjs dist *.tsbuildinfo"
+  },
+  "dependencies": {
+    "@chorus/shared": "workspace:*",
+    "@chorus/workspace": "workspace:*"
+  },
+  "devDependencies": {
+    "@chorus/event-store": "workspace:*",
+    "@types/node": "^22.20.1"
+  }
+}

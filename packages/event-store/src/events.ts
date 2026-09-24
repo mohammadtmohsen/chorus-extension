@@ -1,0 +1,536 @@
+import { ActorSchema, AgentIdSchema } from '@chorus/shared'
+import { z } from 'zod'
+
+/**
+ * The domain event log. This is the source of truth for a conversation —
+ * not the providers'.
+ *
+ * S3 (2026-08-03) established why: Codex discards partial assistant output when
+ * a turn is interrupted or its process dies, returning only the `userMessage`
+ * from `thread/read`. Claude preserves it. Since the transcript cannot be
+ * rebuilt from the providers, everything an agent streams must be durable here
+ * as it arrives. See docs/research/spikes-2026-08-03.md.
+ */
+
+export const SCHEMA_VERSION = 1
+
+const actor = ActorSchema
+
+/**
+ * `itemRef` is the provider's id for a streaming item. It is how a run of
+ * deltas is stitched back into one message during projection.
+ */
+const itemRef = z.string().min(1)
+
+export const ChorusEventPayload = z.discriminatedUnion('type', [
+  z.object({
+    type: z.literal('conversation.created'),
+    projectId: z.string(),
+    title: z.string(),
+    /**
+     * The conversation this one was started to continue, if any.
+     *
+     * The carried transcript itself is **not** stored here, and that is the
+     * point of keeping only the id: it already exists in the log under that
+     * conversation, and copying it would put a second, immediately divergent
+     * copy of every message in the store. What has to survive is the *fact* of
+     * the continuation, because the seed rides on the first message and a
+     * relaunch before that message loses it — with this the seed is rebuilt
+     * from the source, without it a person who quit and came back gets a blank
+     * room that was supposed to be carrying context.
+     *
+     * Optional, so every row ever appended still parses. Absent means the
+     * conversation starts fresh, which is what all of them did until now.
+     */
+    continuedFrom: z.string().optional(),
+    /**
+     * An aside: a conversation held in a fork of another conversation's agent,
+     * about one passage of one reply.
+     *
+     * Optional as a whole, so every `conversation.created` ever appended still
+     * parses and still rebuilds as the ordinary conversation it was. Absent
+     * means ordinary — there is no `kind: 'main'`, because inventing one would
+     * make the old rows wrong rather than merely quiet.
+     *
+     * One optional *object* rather than three optional fields, which is the
+     * shape the invariant actually has: an aside without its parent cannot be
+     * found and without its source cannot say what it is about, so a half-filled
+     * one is not a lesser aside, it is a corrupt row. Three independent
+     * optionals let that through, and `aside:list` then returns a null where the
+     * IPC contract promises a string.
+     */
+    /*
+     * The shape an earlier build wrote, still read.
+     *
+     * `ask-on-the-fly` shipped these three at the top level before they were
+     * gathered into `aside`. Zod strips what a schema does not name, so dropping
+     * them turned every aside already in a log into an ordinary conversation —
+     * which then appeared in the session list beside the work it was about. The
+     * log is append-only: those rows cannot be rewritten, so the reader is what
+     * has to keep up. Never written any more; see `asideMetaOf`.
+     */
+    kind: z.literal('aside').optional(),
+    parentId: z.string().optional(),
+    sourceEventId: z.string().optional(),
+    aside: z
+      .object({
+        parentId: z.string().min(1),
+        sourceEventId: z.string().min(1),
+        /**
+         * Why it was opened. `question` by absence, so the asides written
+         * before explanations existed read correctly rather than needing a
+         * backfill the log cannot take.
+         */
+        purpose: z.enum(['question', 'explanation', 'translation', 'recap']).default('question'),
+        /**
+         * For an explanation, the language as it was **at the time**.
+         *
+         * Recorded rather than read back from settings, because the setting can
+         * change: a row explaining a passage in Arabic does not become a French
+         * row six months later because someone edited a preference.
+         */
+        language: z.string().optional(),
+      })
+      .optional(),
+  }),
+
+  /**
+   * CLI versions are recorded here on purpose (plan §2.5). Chorus drives the
+   * user's installed `codex` and `claude`, which self-update, so a break after
+   * an upgrade should be visible in the log instead of a guess.
+   */
+  z.object({
+    type: z.literal('session.started'),
+    agentId: AgentIdSchema,
+    sessionRef: z.string(),
+    cwd: z.string(),
+    model: z.string().nullable(),
+    cliVersion: z.string().nullable(),
+    /**
+     * True when this is the app reopening a conversation rather than an agent
+     * joining one. Optional, because events written before it existed have no
+     * opinion and must still parse.
+     */
+    resumed: z.boolean().optional(),
+  }),
+  z.object({
+    type: z.literal('session.ended'),
+    agentId: AgentIdSchema,
+    sessionRef: z.string(),
+    /** `shutdown` is the app quitting; the rest are things that happened to it. */
+    reason: z.enum(['closed', 'crashed', 'replaced', 'shutdown']),
+  }),
+
+  z.object({ type: z.literal('user.message'), text: z.string() }),
+
+  /**
+   * The person edited a file themselves, in Chorus.
+   *
+   * A log event rather than pushed state, and the test CLAUDE.md sets is not
+   * "is it interesting" but "does a consumer act on it". `catchup.ts` does: an
+   * agent that read this file at the start of a turn is composing a patch
+   * against a version that no longer exists, and without this it overwrites the
+   * fix and neither party learns why. That is the whole reason the event
+   * exists.
+   *
+   * **The content is deliberately not here.** C-021's unsolved half is that
+   * storing what was read means storing whatever it was, including files the
+   * permission engine treats as secret — and a file body in the log is that
+   * problem with the volume turned up. The path, the time and how much moved is
+   * everything a consumer needs to say "this changed under you, read it again".
+   */
+  z.object({
+    type: z.literal('file.edited.byUser'),
+    path: z.string(),
+    added: z.number().int(),
+    removed: z.number().int(),
+  }),
+
+  /**
+   * The person drove source control themselves, from the Changes panel.
+   *
+   * Same test as `file.edited.byUser`, and it passes for the same reason: a
+   * consumer acts on it. An agent that just wrote three files and had them
+   * **discarded** is holding a picture of the tree that no longer exists, and
+   * nothing else in the transcript would say so — it would go looking for its
+   * own work and find the file as it was before it started.
+   *
+   * Staging and unstaging are in the union but deliberately not replayed to
+   * agents; see `catchup.ts`. They move nothing on disk and an agent has no use
+   * for the index.
+   *
+   * `detail` carries a commit subject or a branch name — never a diff, and
+   * never file contents, for the reason on `file.edited.byUser`.
+   */
+  z.object({
+    type: z.literal('repo.changed.byUser'),
+    action: z.enum(['staged', 'unstaged', 'discarded', 'committed', 'pushed']),
+    paths: z.array(z.string()).default([]),
+    detail: z.string().nullable().default(null),
+  }),
+
+  z.object({ type: z.literal('turn.started'), turnRef: z.string() }),
+  z.object({
+    type: z.literal('turn.completed'),
+    turnRef: z.string(),
+    status: z.enum(['completed', 'interrupted', 'failed']),
+    /**
+     * True when Chorus asked for the interrupt. Claude reports a user-initiated
+     * stop as `error_during_execution` with no distinct status, so without this
+     * the UI would show an error card for pressing Stop (S3b).
+     */
+    userInitiated: z.boolean().default(false),
+  }),
+
+  z.object({ type: z.literal('agent.message.delta'), itemRef, text: z.string() }),
+  z.object({ type: z.literal('agent.message.completed'), itemRef, text: z.string() }),
+  z.object({ type: z.literal('agent.reasoning.delta'), itemRef, text: z.string() }),
+
+  z.object({
+    type: z.literal('command.started'),
+    itemRef,
+    command: z.array(z.string()),
+    cwd: z.string(),
+  }),
+  z.object({
+    type: z.literal('command.output'),
+    itemRef,
+    stream: z.enum(['stdout', 'stderr']),
+    chunk: z.string(),
+  }),
+  z.object({
+    type: z.literal('command.completed'),
+    itemRef,
+    exitCode: z.number().int().nullable(),
+  }),
+
+  z.object({
+    type: z.literal('file.change.proposed'),
+    itemRef,
+    files: z.array(z.object({ path: z.string(), patch: z.string() })),
+  }),
+  /*
+   * What the operation did, as opposed to what it offered to do.
+   *
+   * Counts rather than a patch: an adapter is the last place that still knows
+   * how its provider spells a diff, and Codex's is raw file content for an add
+   * and headerless hunks for an update — so counting downstream produces zeros.
+   * The diff for a turn is `diff.updated`.
+   */
+  z.object({
+    type: z.literal('file.change.completed'),
+    itemRef,
+    files: z.array(
+      z.object({
+        path: z.string(),
+        oldPath: z.string().optional(),
+        change: z.enum(['added', 'removed', 'modified', 'renamed']),
+        added: z.number().int(),
+        removed: z.number().int(),
+        /*
+         * Defaulted, not required: rows appended before the card drew diffs
+         * carry none, and the log is append-only — a schema that refused them
+         * would refuse the conversations that are already on disk.
+         */
+        patch: z.string().default(''),
+        omittedLines: z.number().int().optional(),
+      })
+    ),
+    outcome: z.enum(['applied', 'failed', 'declined']),
+  }),
+  z.object({ type: z.literal('diff.updated'), unifiedDiff: z.string() }),
+
+  z.object({
+    type: z.literal('approval.requested'),
+    approvalId: z.string(),
+    /*
+     * Widened for `editorEdit` (Phase 6e). Appending is the only safe direction:
+     * this schema parses rows written by every earlier build, so a value may be
+     * added but never removed or renamed — an old row naming a kind this enum no
+     * longer knows would fail to parse, and the log is append-only precisely so
+     * that cannot happen.
+     */
+    kind: z.enum(['command', 'fileChange', 'permissionGrant', 'mcpToolCall', 'editorEdit']),
+    request: z.unknown(),
+    expiresAt: z.number().int(),
+  }),
+  z.object({
+    type: z.literal('approval.decided'),
+    approvalId: z.string(),
+    outcome: z.enum(['allow', 'deny', 'cancel', 'timeout']),
+    /*
+     * `always` widens this and does not migrate anything: rows already written
+     * only ever hold `once` or `session`, so every existing log still parses.
+     */
+    scope: z.enum(['once', 'session', 'always']).nullable(),
+    decidedBy: z.enum(['user', 'policy', 'system']),
+    /** Which rule auto-decided this. Null means a human chose (plan §4.4). */
+    policyRuleId: z.string().nullable(),
+  }),
+  z.object({
+    type: z.literal('approval.withdrawn'),
+    approvalId: z.string(),
+  }),
+
+  z.object({
+    type: z.literal('userinput.requested'),
+    userInputId: z.string(),
+    /**
+     * The normalized `UserInputRequest`. Secret questions are recorded — the
+     * user must be able to see later that they were asked — but their *answers*
+     * never are (see `userinput.answered`).
+     */
+    request: z.unknown(),
+    expiresAt: z.number().int(),
+  }),
+  z.object({
+    type: z.literal('userinput.answered'),
+    userInputId: z.string(),
+    outcome: z.enum(['answered', 'cancel', 'timeout']),
+    /**
+     * Answers, with every secret question's values replaced by null before this
+     * ever reaches the store.
+     *
+     * Null rather than omitted: "you answered this, and it is not written down"
+     * is a different fact from "you never answered", and replay has to be able
+     * to tell them apart.
+     */
+    answers: z
+      .array(z.object({ questionId: z.string(), values: z.array(z.string()).nullable() }))
+      .nullable(),
+    answeredBy: z.enum(['user', 'system']),
+  }),
+
+  z.object({
+    type: z.literal('handoff.created'),
+    handoffId: z.string(),
+    from: AgentIdSchema,
+    to: AgentIdSchema,
+    sourceEventIds: z.array(z.string()),
+    brief: z.string(),
+  }),
+
+  /**
+   * The agent summarised its own history to fit the context window.
+   *
+   * No payload: the codex notification carries only encrypted content, and the
+   * fact is the whole of what a reader needs. It marks the point above which
+   * the transcript and the agent's memory of it stop being the same thing.
+   */
+  z.object({ type: z.literal('context.compacted') }),
+
+  z.object({
+    type: z.literal('usage.updated'),
+    inputTokens: z.number().int(),
+    outputTokens: z.number().int(),
+    costUsd: z.number().nullable(),
+  }),
+  /**
+   * The conversation's permission profile changed mid-session.
+   *
+   * Logged rather than kept in memory: "human controlled" is only auditable if
+   * widening what agents may do leaves a mark next to what they then did.
+   */
+  /**
+   * The project directory changed mid-session.
+   *
+   * Recorded because it changes what "the diff" means: the review panel and any
+   * handoff brief follow it, so a diff read later is only interpretable against
+   * the directory in force at the time.
+   */
+  /** The conversation was given a name. Its default is the folder it opened in. */
+  z.object({
+    type: z.literal('conversation.renamed'),
+    title: z.string(),
+    previousTitle: z.string(),
+  }),
+
+  /**
+   * An aside stopped being an aside and became a conversation of its own.
+   *
+   * An event rather than a column write, because `kind = 'aside'` is *derived*
+   * from `conversation.created` on every rebuild — a direct `UPDATE` would be
+   * erased by the one operation the log guarantees. See
+   * `docs/plans/aside-that-acts-2026-08-10/part-b.md`.
+   *
+   * It records what the conversation **was**, in the same spirit as
+   * `conversation.renamed` carrying `previousTitle`: read back a week later, the
+   * log should say where this room came from, not merely that something changed.
+   * The projection keeps those columns as provenance and clears only `kind`,
+   * which is the field that hides it.
+   */
+  z.object({
+    type: z.literal('aside.promoted'),
+    parentId: z.string(),
+    sourceEventId: z.string(),
+  }),
+
+  z.object({
+    type: z.literal('project.changed'),
+    cwd: z.string(),
+    previousCwd: z.string(),
+  }),
+
+  z.object({
+    type: z.literal('policy.changed'),
+    profileId: z.string(),
+    previousProfileId: z.string(),
+  }),
+
+  z.object({
+    type: z.literal('error.raised'),
+    message: z.string(),
+    recoverable: z.boolean(),
+  }),
+
+  /**
+   * Something the harness said about itself — a hook that ran, a tool a rule
+   * denied, an API retry, the output of a local slash command.
+   *
+   * Durable like the rest of the log rather than shown and forgotten: "a hook
+   * blocked it" is the answer to why a turn did nothing, and that question is
+   * usually asked the next day. `detail` is nullable rather than optional for
+   * the same reason `userinput.answered.answers` is — "there was no detail" and
+   * "we did not record one" are different facts.
+   */
+  /**
+   * A tool call that is not a shell command — a read, a search, a subagent.
+   *
+   * `command.*` above keeps Bash, which is the only tool with real stdout and a
+   * real exit code. `parentRef` is what makes a subagent's work legible: the
+   * calls it made are the ones pointing at its id.
+   */
+  z.object({
+    type: z.literal('tool.started'),
+    itemRef,
+    name: z.string(),
+    parentRef: z.string().nullable(),
+    detail: z.string().nullable(),
+    /**
+     * The file the call is about, when it is about one — never the display
+     * string beside it. `detail` is truncated to a line and may be a pattern or
+     * a prompt; this is what a click can actually open.
+     *
+     * Optional rather than nullable, because every row written before this
+     * existed has no key at all and must keep parsing.
+     */
+    path: z.string().optional(),
+  }),
+  z.object({
+    type: z.literal('tool.progress'),
+    itemRef,
+    note: z.string().nullable(),
+    elapsedMs: z.number().int().nullable(),
+  }),
+  z.object({
+    type: z.literal('tool.completed'),
+    itemRef,
+    status: z.enum(['ok', 'error']),
+    summary: z.string().nullable(),
+    /*
+     * `.optional()` is load-bearing, not decoration.
+     *
+     * Every stored payload is reparsed through *this* schema on read
+     * (`toStoredEvent`), and `schema_ver` is recorded but never branched on, so
+     * there is no upcasting step. A bare `.nullable()` accepts null but not a
+     * missing key, which would make every `tool.completed` already on disk fail
+     * validation and every existing conversation fail to open — which is why
+     * `resumed` and `parentId` above are optional too.
+     */
+    patch: z.string().nullable().optional(),
+    omittedLines: z.number().int().nullable().optional(),
+  }),
+
+  z.object({
+    type: z.literal('notice.raised'),
+    level: z.enum(['info', 'warn', 'error']),
+    source: z.enum(['hook', 'command', 'retry', 'denial', 'system']),
+    text: z.string(),
+    code: z
+      .enum([
+        'editWithoutApproval',
+        'editVisibilityUnavailable',
+        'staleEditPreview',
+        'contextCarried',
+        'nearCompaction',
+      ])
+      .optional(),
+    detail: z.string().nullable(),
+    /**
+     * Bytes dropped because `detail` was too large to keep whole. 0 when it
+     * was kept entire, which is almost always.
+     *
+     * Optional rather than defaulted, and the difference matters twice. On
+     * *read*, every notice already in the log predates this field, and a
+     * required one would fail `ChorusEventPayload.parse` — which is fail-hard,
+     * so one old notice would take down the read containing it. That is not
+     * hypothetical: it is exactly the failure that put a raw Zod issue array in
+     * the transcript when two builds shared one database.
+     *
+     * On *write*, `.default(0)` would still make the inferred type require it,
+     * so every caller constructing a notice would have to say `0` — and a
+     * notice that omitted nothing would stop being byte-identical to the ones
+     * already stored.
+     */
+    detailOmittedBytes: z.number().int().nonnegative().optional(),
+  }),
+])
+
+/** An aside's metadata, however the row that carries it was written. */
+export interface AsideMeta {
+  readonly parentId: string
+  readonly sourceEventId: string
+  readonly purpose: 'question' | 'explanation' | 'translation' | 'recap'
+  readonly language?: string | undefined
+}
+
+/**
+ * The one place that knows an aside can be described two ways.
+ *
+ * Prefers the current shape and falls back to the three top-level fields an
+ * earlier build wrote. Every reader goes through this rather than reaching for
+ * `payload.aside`, because a reader that forgets loses an aside silently — it
+ * does not fail, it just reports an ordinary conversation, and the first symptom
+ * is someone's "what did you mean by that" sitting in their session list.
+ */
+export function asideMetaOf(payload: ChorusEventPayload): AsideMeta | null {
+  if (payload.type !== 'conversation.created') return null
+  if (payload.aside !== undefined) return payload.aside
+  if (payload.kind !== 'aside') return null
+  if (payload.parentId === undefined || payload.sourceEventId === undefined) return null
+  // An aside written before purpose existed was always a question.
+  return { parentId: payload.parentId, sourceEventId: payload.sourceEventId, purpose: 'question' }
+}
+
+export type ChorusEventPayload = z.infer<typeof ChorusEventPayload>
+export type ChorusEventType = ChorusEventPayload['type']
+
+/** What a caller hands to `append`. Ids, ordering, and time are the store's job. */
+export interface AppendInput {
+  readonly conversationId: string
+  readonly actor: z.infer<typeof actor>
+  readonly payload: ChorusEventPayload
+}
+
+/** What comes back out — the envelope plus its assigned position in the log. */
+export interface StoredEvent {
+  readonly seq: number
+  readonly id: string
+  readonly conversationId: string
+  readonly actor: z.infer<typeof actor>
+  readonly type: ChorusEventType
+  readonly payload: ChorusEventPayload
+  readonly createdAt: number
+  readonly schemaVersion: number
+}
+
+export const StoredEventRow = z.object({
+  seq: z.number().int(),
+  id: z.string(),
+  conversation_id: z.string(),
+  actor,
+  type: z.string(),
+  payload: z.string(),
+  created_at: z.number().int(),
+  schema_ver: z.number().int(),
+})

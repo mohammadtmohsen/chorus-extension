@@ -1,0 +1,6 @@
+**/*.ts
+**/*.tsbuildinfo
+**/tsconfig*.json
+**/vitest.config.ts
+src/**
+node_modules/**

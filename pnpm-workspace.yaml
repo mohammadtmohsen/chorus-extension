@@ -1,0 +1,33 @@
+packages:
+  - 'apps/*'
+  - 'packages/*'
+
+# The Claude Agent SDK ships its CLI as per-platform optional dependencies, and
+# the darwin-arm64 one unpacks to ~257 MB. The adapter drives the user's own
+# installed `claude` through `pathToClaudeCodeExecutable` instead, so the bundled
+# binary would be dead weight in node_modules and in every packaged build.
+ignoredOptionalDependencies:
+  - '@anthropic-ai/claude-agent-sdk-darwin-arm64'
+  - '@anthropic-ai/claude-agent-sdk-darwin-x64'
+  - '@anthropic-ai/claude-agent-sdk-linux-arm64'
+  - '@anthropic-ai/claude-agent-sdk-linux-x64'
+  - '@anthropic-ai/claude-agent-sdk-linux-arm64-musl'
+  - '@anthropic-ai/claude-agent-sdk-linux-x64-musl'
+  - '@anthropic-ai/claude-agent-sdk-win32-arm64'
+  - '@anthropic-ai/claude-agent-sdk-win32-x64'
+
+# Postinstall scripts run arbitrary code, so they are opt-in one package at a
+# time. Every entry here is another binary to account for in a packaged build.
+allowBuilds:
+  # The event store's SQLite binding. It ships N-API prebuilds, so its install
+  # compiles nothing on a supported platform — the entry is for the platforms
+  # where no prebuild exists. Its loader prefers the prebuild either way.
+  better-sqlite3: true
+  # Bundles the extension and the engine into one file each. Its install links
+  # the platform binary, so without this `esbuild` cannot run at all.
+  esbuild: true
+  # Signing and secret storage, pulled in by the packaging tool for publishing
+  # to the Marketplace. A locally installed VSIX is deliberately unsigned, so
+  # neither has anything to do here.
+  '@vscode/vsce-sign': false
+  keytar: false

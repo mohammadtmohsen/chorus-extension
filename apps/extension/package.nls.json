@@ -1,0 +1,8 @@
+{
+  "displayName": "Chorus Collaboration",
+  "description": "Collaboration between coding agents inside VS Code.",
+  "command.openConversation.title": "Chorus Collaboration: Open Conversation",
+  "command.setDeepSeekKey.title": "Chorus Collaboration: Set DeepSeek API Key",
+  "capabilities.untrustedWorkspaces.description": "The engine starts provider CLIs against this workspace, so it is not started until you trust the folder.",
+  "capabilities.virtualWorkspaces.description": "The engine needs a real folder on disk to run provider processes against."
+}

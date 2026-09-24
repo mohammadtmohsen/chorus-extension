@@ -1,0 +1,28 @@
+{
+  "name": "@chorus/transport",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Newline-delimited IPC over a Unix socket, validated against the collaboration protocol. Node-only.",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc -b tsconfig.build.json",
+    "typecheck": "tsc -p tsconfig.json",
+    "test": "vitest run",
+    "clean": "node ../../scripts/rm.mjs dist *.tsbuildinfo"
+  },
+  "dependencies": {
+    "@chorus/collaboration-protocol": "workspace:*",
+    "zod": "^4.4.3"
+  },
+  "devDependencies": {
+    "@types/node": "^22.20.1"
+  }
+}
