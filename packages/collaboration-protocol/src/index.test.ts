@@ -117,8 +117,19 @@ describe('collaboration protocol', () => {
         },
       ],
       state: { approvals: [], questions: [], working: [], usageByActor: {} },
+      active: true,
     })
     expect(parsed.success).toBe(true)
+  })
+
+  it('refuses a replay batch that does not say whether the conversation is active', () => {
+    const parsed = ReplayBatchSchema.safeParse({
+      conversationId: 'conv-1',
+      throughSeq: 7,
+      events: [],
+      state: { approvals: [], questions: [], working: [], usageByActor: {} },
+    })
+    expect(parsed.success).toBe(false)
   })
 
   it('accepts a decision from a card', () => {

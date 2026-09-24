@@ -191,17 +191,25 @@ async function setDeepSeekKey(context: vscode.ExtensionContext): Promise<void> {
   }
 }
 
+interface Restored {
+  readonly id: string
+  readonly resumable: boolean
+}
+
 async function conversationFor(
   context: vscode.ExtensionContext,
-  engine: EngineClient
-): Promise<string | undefined> {
-  const remembered = conversationId ?? context.workspaceState.get<string>(CONVERSATION_STATE_KEY)
+  engine: EngineClient,
+  fresh = false
+): Promise<Restored | undefined> {
+  const remembered = fresh
+    ? undefined
+    : (conversationId ?? context.workspaceState.get<string>(CONVERSATION_STATE_KEY))
 
   if (remembered !== undefined) {
     const batch = await engine.replay(remembered)
     if (batch.events.length > 0) {
       conversationId = remembered
-      return remembered
+      return { id: remembered, resumable: batch.active }
     }
     await context.workspaceState.update(CONVERSATION_STATE_KEY, undefined)
   }
@@ -227,7 +235,7 @@ async function conversationFor(
 
   conversationId = created.conversationId
   await context.workspaceState.update(CONVERSATION_STATE_KEY, created.conversationId)
-  return created.conversationId
+  return { id: created.conversationId, resumable: true }
 }
 
 async function openConversation(context: vscode.ExtensionContext): Promise<void> {
@@ -241,14 +249,40 @@ async function openConversation(context: vscode.ExtensionContext): Promise<void>
 
   try {
     const engine = await engineFor(context, root)
-    const id = await conversationFor(context, engine)
-    if (id === undefined) return
+    let restored = await conversationFor(context, engine)
+    if (restored === undefined) return
+
+    if (!restored.resumable) {
+      const choice = await vscode.window.showWarningMessage(
+        vscode.l10n.t(
+          'This conversation cannot be resumed. Its transcript is readable, but the engine that held it is gone — a reload, an idle exit or a new build. Sending to it will not work.'
+        ),
+        vscode.l10n.t('Start a new conversation')
+      )
+      if (choice !== undefined) {
+        await context.workspaceState.update(CONVERSATION_STATE_KEY, undefined)
+        conversationId = undefined
+        const fresh = await conversationFor(context, engine, true)
+        if (fresh === undefined) return
+        restored = fresh
+      }
+    }
+
+    const id = restored.id
 
     const run = (command: ConversationCommand): void => {
       void sendWithRetry(context, root, command)
         .then((result) => {
           if (result.status === 'rejected') {
-            panel?.status({ text: describeRefusal(result), tone: 'error' })
+            panel?.status({
+              text:
+                result.code === 'unknown-conversation'
+                  ? vscode.l10n.t(
+                      'The engine cannot act on this conversation any more. Run the command again to start a new one.'
+                    )
+                  : describeRefusal(result),
+              tone: 'error',
+            })
             return
           }
           if (result.status === 'duplicate') {

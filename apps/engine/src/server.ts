@@ -200,6 +200,7 @@ export async function serve(options: ServeOptions): Promise<RunningEngine> {
           throughSeq: runtime.logPosition(),
           events: runtime.history(message.conversationId, message.afterSeq),
           state: runtime.transcriptState(message.conversationId),
+          active: runtime.activeConversations().includes(message.conversationId),
         },
       })
       return

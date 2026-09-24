@@ -221,6 +221,7 @@ export const ReplayBatchSchema = z.object({
   throughSeq: z.number().int(),
   events: z.array(StoredEventSchema).readonly(),
   state: TranscriptStateSchema,
+  active: z.boolean(),
 })
 
 export type ReplayBatch = z.infer<typeof ReplayBatchSchema>
