@@ -7,7 +7,7 @@ import {
   type SessionOpts,
   type UsageWindow,
   type UserInputResponse,
-} from '@chorus/agent-protocol'
+} from '@mohammadtmohsen/agent-protocol'
 import {
   CommandLedger,
   EventStore,
@@ -15,7 +15,7 @@ import {
   type SqliteHandle,
   type StoredEvent,
   type TranscriptState,
-} from '@chorus/event-store'
+} from '@mohammadtmohsen/event-store'
 import {
   callRule,
   composeCarryover,
@@ -30,7 +30,7 @@ import {
   withCatchup,
   type CarryoverSource,
   type PermissionProfile,
-} from '@chorus/orchestrator'
+} from '@mohammadtmohsen/orchestrator'
 import {
   AGENT_IDS,
   isAgentId,
@@ -38,7 +38,7 @@ import {
   newHandoffId,
   type AgentId,
   type Logger,
-} from '@chorus/shared'
+} from '@mohammadtmohsen/shared'
 import type { ProjectRecord, RuntimeHost, RuntimeNotifications } from './ports.js'
 
 const DATABASE_FILE = 'chorus.v2.db'

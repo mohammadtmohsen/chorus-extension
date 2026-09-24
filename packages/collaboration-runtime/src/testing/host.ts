@@ -1,8 +1,8 @@
 import { mkdtempSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import type { AgentAdapter } from '@chorus/agent-protocol'
-import type { AgentId } from '@chorus/shared'
+import type { AgentAdapter } from '@mohammadtmohsen/agent-protocol'
+import type { AgentId } from '@mohammadtmohsen/shared'
 import type { ProjectRecord, RuntimeHost } from '../ports.js'
 
 export interface TestHostOptions {

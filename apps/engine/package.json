@@ -15,17 +15,17 @@
     "clean": "node ../../scripts/rm.mjs dist *.tsbuildinfo"
   },
   "dependencies": {
-    "@chorus/adapter-claude": "workspace:*",
-    "@chorus/adapter-codex": "workspace:*",
-    "@chorus/agent-protocol": "workspace:*",
+    "@mohammadtmohsen/adapter-claude": "^1.0.0",
+    "@mohammadtmohsen/adapter-codex": "^1.0.0",
+    "@mohammadtmohsen/agent-protocol": "^1.0.0",
     "@chorus/collaboration-protocol": "workspace:*",
     "@chorus/collaboration-runtime": "workspace:*",
-    "@chorus/event-store": "workspace:*",
-    "@chorus/shared": "workspace:*",
+    "@mohammadtmohsen/event-store": "^1.0.0",
+    "@mohammadtmohsen/shared": "^1.0.0",
     "@chorus/transport": "workspace:*"
   },
   "devDependencies": {
-    "@chorus/orchestrator": "workspace:*",
+    "@mohammadtmohsen/orchestrator": "^1.0.0",
     "@types/node": "^22.20.1"
   }
 }

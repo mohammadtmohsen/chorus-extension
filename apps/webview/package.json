@@ -12,9 +12,9 @@
   },
   "dependencies": {
     "@chorus/collaboration-protocol": "workspace:*",
-    "@chorus/shared": "workspace:*",
+    "@mohammadtmohsen/shared": "^1.0.0",
     "@chorus/transcript": "workspace:*",
-    "@chorus/workspace": "workspace:*",
+    "@mohammadtmohsen/workspace": "^1.0.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0"
   },

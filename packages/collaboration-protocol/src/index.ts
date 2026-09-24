@@ -1,5 +1,5 @@
-import type { ApprovalDecision, UserInputResponse } from '@chorus/agent-protocol'
-import { ActorSchema, AgentIdSchema } from '@chorus/shared'
+import type { ApprovalDecision, UserInputResponse } from '@mohammadtmohsen/agent-protocol'
+import { ActorSchema, AgentIdSchema } from '@mohammadtmohsen/shared'
 import { z } from 'zod'
 
 export const PROTOCOL_VERSION = 1

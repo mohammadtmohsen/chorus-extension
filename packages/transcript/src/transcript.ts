@@ -1,9 +1,9 @@
-import { parseDiff } from '@chorus/workspace/diff'
-import { agentRecord, isAgentId, type Actor, type AgentId } from '@chorus/shared'
+import { parseDiff } from '@mohammadtmohsen/workspace/diff'
+import { agentRecord, isAgentId, type Actor, type AgentId } from '@mohammadtmohsen/shared'
 import { trailingSummary } from './markdown.js'
 import { questionFields, type QuestionField } from './question-text.js'
 import { TRANSCRIPT_DISPOSITION } from './transcript-events.js'
-import type { ChorusEventType } from '@chorus/event-store'
+import type { ChorusEventType } from '@mohammadtmohsen/event-store'
 
 /**
  * The renderer's view of a logged event.

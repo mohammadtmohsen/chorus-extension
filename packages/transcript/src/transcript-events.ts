@@ -1,4 +1,4 @@
-import type { ChorusEventType } from '@chorus/event-store'
+import type { ChorusEventType } from '@mohammadtmohsen/event-store'
 
 /**
  * Which stored events the transcript actually draws.

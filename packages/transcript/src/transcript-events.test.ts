@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { ChorusEventPayload } from '@chorus/event-store'
+import { ChorusEventPayload } from '@mohammadtmohsen/event-store'
 import { EMPTY_VIEW, reduceEvents } from './transcript.js'
 import { TRANSCRIPT_DISPOSITION, TRANSCRIPT_TYPES } from './transcript-events.js'
 import type { TranscriptEvent } from './transcript.js'

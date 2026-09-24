@@ -19,11 +19,11 @@
     "clean": "node ../../scripts/rm.mjs dist *.tsbuildinfo"
   },
   "dependencies": {
-    "@chorus/shared": "workspace:*",
-    "@chorus/workspace": "workspace:*"
+    "@mohammadtmohsen/shared": "^1.0.0",
+    "@mohammadtmohsen/workspace": "^1.0.0"
   },
   "devDependencies": {
-    "@chorus/event-store": "workspace:*",
+    "@mohammadtmohsen/event-store": "^1.0.0",
     "@types/node": "^22.20.1"
   }
 }

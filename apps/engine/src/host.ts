@@ -1,8 +1,8 @@
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
-import type { AgentAdapter } from '@chorus/agent-protocol'
+import type { AgentAdapter } from '@mohammadtmohsen/agent-protocol'
 import type { RuntimeHost } from '@chorus/collaboration-runtime'
-import type { AgentId } from '@chorus/shared'
+import type { AgentId } from '@mohammadtmohsen/shared'
 import { GRANTS_FILE, SETTINGS_FILE, rootKey } from './layout.js'
 
 interface StoredSettings {

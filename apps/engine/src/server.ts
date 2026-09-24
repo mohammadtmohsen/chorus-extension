@@ -1,9 +1,9 @@
 import { randomBytes, randomUUID } from 'node:crypto'
 import { mkdirSync, readFileSync, realpathSync, rmSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
-import type { AgentAdapter } from '@chorus/agent-protocol'
+import type { AgentAdapter } from '@mohammadtmohsen/agent-protocol'
 import { CollaborationRuntime } from '@chorus/collaboration-runtime'
-import type { LedgerEntry, StoredEvent } from '@chorus/event-store'
+import type { LedgerEntry, StoredEvent } from '@mohammadtmohsen/event-store'
 import {
   CommandResultSchema,
   PROTOCOL_VERSION,
@@ -16,7 +16,7 @@ import {
   type ConversationCommand,
   type RuntimeDescriptor,
 } from '@chorus/collaboration-protocol'
-import { Logger, type AgentId } from '@chorus/shared'
+import { Logger, type AgentId } from '@mohammadtmohsen/shared'
 import { listenServer, probe, type ServerConnection } from '@chorus/transport'
 import { makeEngineHost } from './host.js'
 import { DEFAULT_BUILD, DESCRIPTOR_FILE, engineDataPath, socketPathFor } from './layout.js'

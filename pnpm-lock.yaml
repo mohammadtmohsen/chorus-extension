@@ -26,34 +26,34 @@ importers:
 
   apps/engine:
     dependencies:
-      '@chorus/adapter-claude':
-        specifier: workspace:*
-        version: link:../../packages/adapter-claude
-      '@chorus/adapter-codex':
-        specifier: workspace:*
-        version: link:../../packages/adapter-codex
-      '@chorus/agent-protocol':
-        specifier: workspace:*
-        version: link:../../packages/agent-protocol
       '@chorus/collaboration-protocol':
         specifier: workspace:*
         version: link:../../packages/collaboration-protocol
       '@chorus/collaboration-runtime':
         specifier: workspace:*
         version: link:../../packages/collaboration-runtime
-      '@chorus/event-store':
-        specifier: workspace:*
-        version: link:../../packages/event-store
-      '@chorus/shared':
-        specifier: workspace:*
-        version: link:../../packages/shared
       '@chorus/transport':
         specifier: workspace:*
         version: link:../../packages/transport
+      '@mohammadtmohsen/adapter-claude':
+        specifier: ^1.0.0
+        version: 1.0.0(@anthropic-ai/sdk@0.127.0(zod@4.6.5))(@modelcontextprotocol/sdk@1.30.0(supports-color@7.2.0)(zod@4.6.5))
+      '@mohammadtmohsen/adapter-codex':
+        specifier: ^1.0.0
+        version: 1.0.0
+      '@mohammadtmohsen/agent-protocol':
+        specifier: ^1.0.0
+        version: 1.0.0
+      '@mohammadtmohsen/event-store':
+        specifier: ^1.0.0
+        version: 1.0.0
+      '@mohammadtmohsen/shared':
+        specifier: ^1.0.0
+        version: 1.0.0
     devDependencies:
-      '@chorus/orchestrator':
-        specifier: workspace:*
-        version: link:../../packages/orchestrator
+      '@mohammadtmohsen/orchestrator':
+        specifier: ^1.0.0
+        version: 1.0.0
       '@types/node':
         specifier: ^22.20.1
         version: 22.20.4
@@ -79,15 +79,15 @@ importers:
       '@chorus/collaboration-protocol':
         specifier: workspace:*
         version: link:../../packages/collaboration-protocol
-      '@chorus/shared':
-        specifier: workspace:*
-        version: link:../../packages/shared
       '@chorus/transcript':
         specifier: workspace:*
         version: link:../../packages/transcript
-      '@chorus/workspace':
-        specifier: workspace:*
-        version: link:../../packages/workspace
+      '@mohammadtmohsen/shared':
+        specifier: ^1.0.0
+        version: 1.0.0
+      '@mohammadtmohsen/workspace':
+        specifier: ^1.0.0
+        version: 1.0.0
       react:
         specifier: ^19.0.0
         version: 19.3.0
@@ -105,55 +105,14 @@ importers:
         specifier: ^0.25.0
         version: 0.25.12
 
-  packages/adapter-claude:
-    dependencies:
-      '@anthropic-ai/claude-agent-sdk':
-        specifier: 0.3.220
-        version: 0.3.220(@anthropic-ai/sdk@0.127.0(zod@4.6.5))(@modelcontextprotocol/sdk@1.30.0(supports-color@7.2.0)(zod@4.6.5))(zod@4.6.5)
-      '@chorus/agent-protocol':
-        specifier: workspace:*
-        version: link:../agent-protocol
-      '@chorus/shared':
-        specifier: workspace:*
-        version: link:../shared
-      zod:
-        specifier: ^4.4.3
-        version: 4.6.5
-    devDependencies:
-      '@types/node':
-        specifier: ^22.20.1
-        version: 22.20.4
-
-  packages/adapter-codex:
-    dependencies:
-      '@chorus/agent-protocol':
-        specifier: workspace:*
-        version: link:../agent-protocol
-      '@chorus/shared':
-        specifier: workspace:*
-        version: link:../shared
-    devDependencies:
-      '@types/node':
-        specifier: ^22.20.1
-        version: 22.20.4
-
-  packages/agent-protocol:
-    dependencies:
-      '@chorus/shared':
-        specifier: workspace:*
-        version: link:../shared
-      zod:
-        specifier: ^4.4.3
-        version: 4.6.5
-
   packages/collaboration-protocol:
     dependencies:
-      '@chorus/agent-protocol':
-        specifier: workspace:*
-        version: link:../agent-protocol
-      '@chorus/shared':
-        specifier: workspace:*
-        version: link:../shared
+      '@mohammadtmohsen/agent-protocol':
+        specifier: ^1.0.0
+        version: 1.0.0
+      '@mohammadtmohsen/shared':
+        specifier: ^1.0.0
+        version: 1.0.0
       zod:
         specifier: ^4.4.3
         version: 4.6.5
@@ -164,18 +123,18 @@ importers:
 
   packages/collaboration-runtime:
     dependencies:
-      '@chorus/agent-protocol':
-        specifier: workspace:*
-        version: link:../agent-protocol
-      '@chorus/event-store':
-        specifier: workspace:*
-        version: link:../event-store
-      '@chorus/orchestrator':
-        specifier: workspace:*
-        version: link:../orchestrator
-      '@chorus/shared':
-        specifier: workspace:*
-        version: link:../shared
+      '@mohammadtmohsen/agent-protocol':
+        specifier: ^1.0.0
+        version: 1.0.0
+      '@mohammadtmohsen/event-store':
+        specifier: ^1.0.0
+        version: 1.0.0
+      '@mohammadtmohsen/orchestrator':
+        specifier: ^1.0.0
+        version: 1.0.0
+      '@mohammadtmohsen/shared':
+        specifier: ^1.0.0
+        version: 1.0.0
       zod:
         specifier: ^4.4.3
         version: 4.6.5
@@ -189,80 +148,19 @@ importers:
       better-sqlite3:
         specifier: ^13.0.2
         version: 13.0.3
-
-  packages/event-store:
-    dependencies:
-      '@chorus/shared':
-        specifier: workspace:*
-        version: link:../shared
-      better-sqlite3:
-        specifier: ^13.0.2
-        version: 13.0.3
-      zod:
-        specifier: ^4.4.3
-        version: 4.6.5
-    devDependencies:
-      '@types/better-sqlite3':
-        specifier: ^9.6.0
-        version: 9.6.0
-      '@types/node':
-        specifier: ^22.20.1
-        version: 22.20.4
-
-  packages/ide-protocol:
-    dependencies:
-      zod:
-        specifier: ^4.4.3
-        version: 4.6.5
-    devDependencies:
-      '@types/node':
-        specifier: ^22.20.1
-        version: 22.20.4
-
-  packages/orchestrator:
-    dependencies:
-      '@chorus/agent-protocol':
-        specifier: workspace:*
-        version: link:../agent-protocol
-      '@chorus/event-store':
-        specifier: workspace:*
-        version: link:../event-store
-      '@chorus/shared':
-        specifier: workspace:*
-        version: link:../shared
-      zod:
-        specifier: ^4.4.3
-        version: 4.6.5
-    devDependencies:
-      '@types/node':
-        specifier: ^22.20.1
-        version: 22.20.4
-      better-sqlite3:
-        specifier: ^13.0.2
-        version: 13.0.3
-
-  packages/shared:
-    dependencies:
-      zod:
-        specifier: ^4.4.3
-        version: 4.6.5
-    devDependencies:
-      '@types/node':
-        specifier: ^22.20.1
-        version: 22.20.4
 
   packages/transcript:
     dependencies:
-      '@chorus/shared':
-        specifier: workspace:*
-        version: link:../shared
-      '@chorus/workspace':
-        specifier: workspace:*
-        version: link:../workspace
+      '@mohammadtmohsen/shared':
+        specifier: ^1.0.0
+        version: 1.0.0
+      '@mohammadtmohsen/workspace':
+        specifier: ^1.0.0
+        version: 1.0.0
     devDependencies:
-      '@chorus/event-store':
-        specifier: workspace:*
-        version: link:../event-store
+      '@mohammadtmohsen/event-store':
+        specifier: ^1.0.0
+        version: 1.0.0
       '@types/node':
         specifier: ^22.20.1
         version: 22.20.4
@@ -275,19 +173,6 @@ importers:
       zod:
         specifier: ^4.4.3
         version: 4.6.5
-    devDependencies:
-      '@types/node':
-        specifier: ^22.20.1
-        version: 22.20.4
-
-  packages/workspace:
-    dependencies:
-      '@chorus/ide-protocol':
-        specifier: workspace:*
-        version: link:../ide-protocol
-      '@chorus/shared':
-        specifier: workspace:*
-        version: link:../shared
     devDependencies:
       '@types/node':
         specifier: ^22.20.1
@@ -552,6 +437,30 @@ packages:
     peerDependenciesMeta:
       '@cfworker/json-schema':
         optional: true
+
+  '@mohammadtmohsen/adapter-claude@1.0.0':
+    resolution: {integrity: sha512-/gCpZBHtnm5aT3qSn/QwovWa1JAjKmFmKnFS4uwlOLWD7wgN32R+NwMHsZwVIKWrx08MFuIwYnI86ZE2n7ym8A==, tarball: https://npm.pkg.github.com/download/@mohammadtmohsen/adapter-claude/1.0.0/32e21965950e23bd3e8d0f16b62f896379e55a74}
+
+  '@mohammadtmohsen/adapter-codex@1.0.0':
+    resolution: {integrity: sha512-RYB2SS6NdSmE7oxn609dyE2RzFx4lM5DJOMjwGIsJ1kvpz5zw39NSAHmpMtK8OZqbkokzf41mcO9uVJt0r6hOQ==, tarball: https://npm.pkg.github.com/download/@mohammadtmohsen/adapter-codex/1.0.0/b32260da64cf4f13878e5a8004632b3f4a8af01b}
+
+  '@mohammadtmohsen/agent-protocol@1.0.0':
+    resolution: {integrity: sha512-YfUSYoWJPQIb+l2wDOUtuh6n/RFcMxt7w5tT3EGIwLYRZUx6pj9605ZESF5NUMPvqhk+wQe7c5/T/jF+7rl3qA==, tarball: https://npm.pkg.github.com/download/@mohammadtmohsen/agent-protocol/1.0.0/fe81af18b818dd766a3b06f245c791f2354c3a7a}
+
+  '@mohammadtmohsen/event-store@1.0.0':
+    resolution: {integrity: sha512-3zOckpQfCVX33r7naVZi8QZoX4Kf1bo20HD8dOKjlKYZFcVNh23GGg1RFnsAXjvEoRocnseXyJKSIgdv0KpwVw==, tarball: https://npm.pkg.github.com/download/@mohammadtmohsen/event-store/1.0.0/eeade25dd91831bf4e6e5b7a47603b708581f46a}
+
+  '@mohammadtmohsen/ide-protocol@1.0.0':
+    resolution: {integrity: sha512-TVa/YDCWOla2gY1cDH3peEssXHHTEtoO/6wAPenMSf8KCd1eCqGHYo1hFydrdxY1Eg0Eky5i3iX1G3KFyWzTbw==, tarball: https://npm.pkg.github.com/download/@mohammadtmohsen/ide-protocol/1.0.0/33963d889173fb8aa4787a217595cbc6aecd5791}
+
+  '@mohammadtmohsen/orchestrator@1.0.0':
+    resolution: {integrity: sha512-adaJnq/c2IoNnSmLPACDviMIdgmnLHXO0PmVC60YsZDMZT+aX8B0YxH3JPyTmENaeKl0d8RD8ivXBeKRLShtfg==, tarball: https://npm.pkg.github.com/download/@mohammadtmohsen/orchestrator/1.0.0/58126c738ee476dd06c0fae2b1e6fe1a602b0065}
+
+  '@mohammadtmohsen/shared@1.0.0':
+    resolution: {integrity: sha512-/mShOPiZwHSnwQDbQHHlKDBKy+IREPgNfw38AMQj5DhQ92+e5wYw/PCHhUFDjvkariYydi7Vdguz8xKKjqrjMw==, tarball: https://npm.pkg.github.com/download/@mohammadtmohsen/shared/1.0.0/586141bc8ab0cb16980165c2406008960f4ab3ca}
+
+  '@mohammadtmohsen/workspace@1.0.0':
+    resolution: {integrity: sha512-PoIN2YGu/Ge4Dxjb2+Z/RrePhuXB859wYuXoQCW9DFVRnOeVP3qxy8/r2jTF9FP19KL9JT94J3dxr12erzuNLA==, tarball: https://npm.pkg.github.com/download/@mohammadtmohsen/workspace/1.0.0/302fb005775ad57246ab1ac839a232584b3ac56b}
 
   '@nodelib/fs.scandir@2.1.5':
     resolution: {integrity: sha512-vq24Bq3ym5HEQm2NKCr3yXDwjc7vTsEThRDnkp2DK9p1uqLR+DHurm/NOTo0KG7HYHU7eppKZj3MyqYuMBf62g==}
@@ -2493,6 +2402,52 @@ snapshots:
       zod-to-json-schema: 3.25.2(zod@4.6.5)
     transitivePeerDependencies:
       - supports-color
+
+  '@mohammadtmohsen/adapter-claude@1.0.0(@anthropic-ai/sdk@0.127.0(zod@4.6.5))(@modelcontextprotocol/sdk@1.30.0(supports-color@7.2.0)(zod@4.6.5))':
+    dependencies:
+      '@anthropic-ai/claude-agent-sdk': 0.3.220(@anthropic-ai/sdk@0.127.0(zod@4.6.5))(@modelcontextprotocol/sdk@1.30.0(supports-color@7.2.0)(zod@4.6.5))(zod@4.6.5)
+      '@mohammadtmohsen/agent-protocol': 1.0.0
+      '@mohammadtmohsen/shared': 1.0.0
+      zod: 4.6.5
+    transitivePeerDependencies:
+      - '@anthropic-ai/sdk'
+      - '@modelcontextprotocol/sdk'
+
+  '@mohammadtmohsen/adapter-codex@1.0.0':
+    dependencies:
+      '@mohammadtmohsen/agent-protocol': 1.0.0
+      '@mohammadtmohsen/shared': 1.0.0
+
+  '@mohammadtmohsen/agent-protocol@1.0.0':
+    dependencies:
+      '@mohammadtmohsen/shared': 1.0.0
+      zod: 4.6.5
+
+  '@mohammadtmohsen/event-store@1.0.0':
+    dependencies:
+      '@mohammadtmohsen/shared': 1.0.0
+      better-sqlite3: 13.0.3
+      zod: 4.6.5
+
+  '@mohammadtmohsen/ide-protocol@1.0.0':
+    dependencies:
+      zod: 4.6.5
+
+  '@mohammadtmohsen/orchestrator@1.0.0':
+    dependencies:
+      '@mohammadtmohsen/agent-protocol': 1.0.0
+      '@mohammadtmohsen/event-store': 1.0.0
+      '@mohammadtmohsen/shared': 1.0.0
+      zod: 4.6.5
+
+  '@mohammadtmohsen/shared@1.0.0':
+    dependencies:
+      zod: 4.6.5
+
+  '@mohammadtmohsen/workspace@1.0.0':
+    dependencies:
+      '@mohammadtmohsen/ide-protocol': 1.0.0
+      '@mohammadtmohsen/shared': 1.0.0
 
   '@nodelib/fs.scandir@2.1.5':
     dependencies:

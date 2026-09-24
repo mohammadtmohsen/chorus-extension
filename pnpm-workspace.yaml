@@ -31,3 +31,13 @@ allowBuilds:
   # neither has anything to do here.
   '@vscode/vsce-sign': false
   keytar: false
+
+minimumReleaseAgeExclude:
+  - '@mohammadtmohsen/adapter-claude@1.0.0'
+  - '@mohammadtmohsen/adapter-codex@1.0.0'
+  - '@mohammadtmohsen/agent-protocol@1.0.0'
+  - '@mohammadtmohsen/event-store@1.0.0'
+  - '@mohammadtmohsen/ide-protocol@1.0.0'
+  - '@mohammadtmohsen/orchestrator@1.0.0'
+  - '@mohammadtmohsen/shared@1.0.0'
+  - '@mohammadtmohsen/workspace@1.0.0'

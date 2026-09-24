@@ -7,7 +7,7 @@
 | Source project | `/Users/mohamadtaleb/code/workbench` |
 | Reference HEAD | `d471bed447a9f5b9724b6d2a8b35a50e96ea06be` |
 | Comparison project | `/Users/mohamadtaleb/code/chorus`, local HEAD `c2847c4ef35451f245bff1c83c1a445766bb2d1c` |
-| Status | Milestones 0–3 complete and installed; the product decision is next |
+| Status | Milestones 0–3 complete and installed; the product and core decision is made; Milestone 4 is next |
 | Core ownership during prototype | Imported source packages and extracted coordinator inside `chorus-extension` |
 | First platform | Local desktop VS Code on macOS |
 | First proof | Milestones 0–3: two agents, one conversation, a handoff, an approval, an edit, and reconnection after Reload Window |
@@ -125,6 +125,28 @@ This accepts a temporary source fork to keep the first proof contained. It does 
 Neither `workbench` nor `chorus` is retired by this plan. The open product decision does not block the isolated prototype, but it must be resolved before promising long-term maintenance of multiple frontends.
 
 لا تنهي هذه الـ plan دعم `workbench` أو `chorus`. ولا يمنع الـ product decision المفتوح تنفيذ الـ prototype المعزولة، لكن يجب حسمه قبل الالتزام بصيانة عدة frontends على المدى الطويل.
+
+#### Resolved, 2026-09-24
+
+**The extension is the primary coding interface; new coding-interface work goes here.**
+
+**The core is one shared package set that every product consumes** — not a copy each.
+
+The measurement that decided the second half. Against `workbench` the extension is still in step: `shared`, `agent-protocol`, `orchestrator`, `adapter-claude`, `adapter-codex` and `workspace` differ in zero files, and `event-store` differs only by `ledger.ts` and the two files this milestone edited, plus the import-time edits the provenance record already lists. Against `chorus` it is not in step at all — `shared` 3 files, `agent-protocol` 5, `event-store` 6, `adapter-claude` 6, `adapter-codex` 5, `orchestrator` 12. The copies were always going to drift. What was not known is which way: the chat app's copy has already gone, and the two coding frontends are still identical.
+
+Choosing the extension on the first question rests on what it does not have to own. The editor, the extension host, SCM, the terminal and remote access are VS Code's, so the `WebContentsView` compositing rules that forbid any renderer-drawn overlay, the one shared REH (C-063), the `spawn-helper` repair in two places, and the xterm viewport override are surfaces this frontend never carries — and it reached a working collaboration loop in three milestones without them.
+
+Neither `workbench` nor `chorus` is retired by this. Retiring `workbench` and the shared-core release and consumption path are each their own plan with their own scope; neither is Milestone 4.
+
+**الـ extension هو واجهة البرمجة الأساسية؛ وعمل واجهة البرمجة الجديد يذهب إليه.**
+
+**والـ core مجموعة حزم واحدة مشتركة يستهلكها كل منتج** — لا نسخة لكل واحد.
+
+والقياس الذي حسم النصف الثاني. مقابل `workbench` ما زال الـ extension متوافقاً: `shared` و`agent-protocol` و`orchestrator` و`adapter-claude` و`adapter-codex` و`workspace` لا يختلف أي ملف فيها، و`event-store` لا يختلف إلا بـ `ledger.ts` والملفين اللذين عدّلهما هذا الـ milestone، إضافة إلى تعديلات الـ import المسجَّلة في الـ provenance. أما مقابل `chorus` فهو غير متوافق إطلاقاً — `shared` ثلاثة ملفات، و`agent-protocol` خمسة، و`event-store` ستة، و`adapter-claude` ستة، و`adapter-codex` خمسة، و`orchestrator` اثنا عشر. كانت النسخ ستتباعد حتماً. وما لم يكن معلوماً هو الاتجاه: نسخة تطبيق الـ chat تباعدت بالفعل، والواجهتان البرمجيتان ما زالتا متطابقتين.
+
+واختيار الـ extension في السؤال الأول يقوم على ما لا يضطرّ لامتلاكه. فالـ editor والـ extension host والـ SCM والـ terminal والوصول عن بعد كلها لـ VS Code، فتصبح قواعد تركيب `WebContentsView` التي تمنع أي overlay يرسمه الـ renderer، وREH الواحد المشترك (C-063)، وإصلاح `spawn-helper` في موضعين، وتجاوز viewport الخاص بـ xterm أسطحاً لا يحملها هذا الـ frontend أبداً — وقد وصل إلى حلقة collaboration عاملة في ثلاثة milestones بدونها.
+
+ولا يُنهي هذا دعم `workbench` ولا `chorus`. فإحالة `workbench` على التقاعد، ومسار release وconsumption للـ core المشترك، كلاهما plan مستقلّ بscope خاص؛ ولا أحدهما هو Milestone 4.
 
 ### Product scope
 
@@ -618,8 +640,8 @@ No tests, builds, app launches, installations, commits, or publication are part 
 | DeepSeek, and where its key lives | DeepSeek is a `ClaudeAdapter` pointed at DeepSeek's endpoint, with the full variable recipe ported. Its key rests **only** in VS Code SecretStorage, travels to the engine over the socket as `credential.set`, and is held in memory — never a settings file, never a log line, and re-sent on every connect so a replaced engine starts with it. Verified end to end: refused with an actionable message before the key, accepted after. `editorEdit` is still deliberately out, and needs Milestone 2's editor |
 | Extension implementation | Installed from a local VSIX and working. Never published, and nothing equivalent to the desktop's `verify:package` exists for it |
 | Runtime and native packaging validation | Not run |
-| Long-term product and core ownership | User decision after Milestone 3, before Milestone 4 |
-| Next implementation milestone | Milestone 3's remaining evidence: reload during streaming and with an approval pending, a retried command, and no silent replay |
+| Long-term product and core ownership | **Decided 2026-09-24.** The extension is the primary coding interface, and the core is one shared package set every product consumes. The drift measurement that decided it is in *Product decision after the first proof*; the shared-core path and the `workbench` retirement each need their own plan, and neither is Milestone 4. The shared-core plan is `docs/plans/02-shared-core.md`; the `workbench` retirement plan does not exist yet |
+| Next implementation milestone | Milestone 4: three agents and a useful daily workflow in the local VSIX — conversation history and reopen, selection and diagnostics, onboarding, localization, package docs |
 
 ## Final Flow
 

@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
-import type { AgentId } from '@chorus/shared'
-import { Logger, newApprovalId } from '@chorus/shared'
-import { FakeAdapter } from '@chorus/orchestrator'
+import type { AgentId } from '@mohammadtmohsen/shared'
+import { Logger, newApprovalId } from '@mohammadtmohsen/shared'
+import { FakeAdapter } from '@mohammadtmohsen/orchestrator'
 import { CollaborationRuntime } from './runtime.js'
 import { makeTestHost, type TestHost } from './testing/host.js'
 

@@ -1,6 +1,6 @@
 import type { ReactElement } from 'react'
 import type { WebviewToHost } from '@chorus/collaboration-protocol'
-import { isAgentId } from '@chorus/shared'
+import { isAgentId } from '@mohammadtmohsen/shared'
 import type { PendingApproval } from '@chorus/transcript'
 import type { Host } from './Conversation.js'
 import { t } from './strings.js'

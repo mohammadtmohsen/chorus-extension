@@ -3,8 +3,8 @@ import type {
   AgentActivity,
   BackgroundTask,
   UsageWindow,
-} from '@chorus/agent-protocol'
-import type { AgentId } from '@chorus/shared'
+} from '@mohammadtmohsen/agent-protocol'
+import type { AgentId } from '@mohammadtmohsen/shared'
 
 export interface ProjectRecord {
   readonly id: string

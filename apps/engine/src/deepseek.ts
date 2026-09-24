@@ -1,5 +1,5 @@
-import { ClaudeAdapter, anthropicManagedEnv } from '@chorus/adapter-claude'
-import type { AgentAdapter, ModelChoice } from '@chorus/agent-protocol'
+import { ClaudeAdapter, anthropicManagedEnv } from '@mohammadtmohsen/adapter-claude'
+import type { AgentAdapter, ModelChoice } from '@mohammadtmohsen/agent-protocol'
 import { sdkExecutablePath, spawnSpec } from './command.js'
 import { resolveCommand } from './which.js'
 

@@ -1,11 +1,11 @@
 import { parseArgs } from 'node:util'
-import type { AgentAdapter } from '@chorus/agent-protocol'
-import { Logger, isAgentId, type AgentId } from '@chorus/shared'
+import type { AgentAdapter } from '@mohammadtmohsen/agent-protocol'
+import { Logger, isAgentId, type AgentId } from '@mohammadtmohsen/shared'
 import { NATIVE_AGENTS, createAdapters, createCredentials } from './providers.js'
 import { existingEngine, serve } from './server.js'
 
 async function fakeAdapters(ids: readonly AgentId[]): Promise<Map<AgentId, AgentAdapter>> {
-  const { FakeAdapter } = await import('@chorus/orchestrator')
+  const { FakeAdapter } = await import('@mohammadtmohsen/orchestrator')
   return new Map(ids.map((id) => [id, new FakeAdapter({ id })]))
 }
 

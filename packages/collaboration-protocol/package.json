@@ -19,8 +19,8 @@
     "clean": "node ../../scripts/rm.mjs dist *.tsbuildinfo"
   },
   "dependencies": {
-    "@chorus/agent-protocol": "workspace:*",
-    "@chorus/shared": "workspace:*",
+    "@mohammadtmohsen/agent-protocol": "^1.0.0",
+    "@mohammadtmohsen/shared": "^1.0.0",
     "zod": "^4.4.3"
   },
   "devDependencies": {

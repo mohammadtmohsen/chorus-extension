@@ -8,8 +8,8 @@ import {
   type ConversationCommand,
   type ServerMessage,
 } from '@chorus/collaboration-protocol'
-import { FakeAdapter } from '@chorus/orchestrator'
-import { Logger, type AgentId } from '@chorus/shared'
+import { FakeAdapter } from '@mohammadtmohsen/orchestrator'
+import { Logger, type AgentId } from '@mohammadtmohsen/shared'
 import { connectTo, type ClientConnection } from '@chorus/transport'
 import { createCredentials } from './providers.js'
 import { existingEngine, serve, type RunningEngine } from './server.js'

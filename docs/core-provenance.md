@@ -1,6 +1,20 @@
 # Core provenance
 
-The collaboration core in this workspace is imported from `workbench`, not
+> **Superseded 2026-09-24.** The eight shared packages are no longer a copy in this workspace.
+> They are consumed from GitHub Packages at `^1.0.0`, under the `@mohammadtmohsen/*` scope, and
+> `chorus-core` owns them. What follows describes the import that seeded `chorus-core` — it is the
+> record of which revision each file came from, and it is not what this workspace depends on now.
+> The five packages this workspace owns — `collaboration-protocol`, `collaboration-runtime`,
+> `transcript`, `transport` and the apps — were never part of the import and stay here.
+>
+> **أُشير إليها كمُلغاة في 2026-09-24.** الحزم الثماني المشتركة لم تعد نسخة في هذا الـ workspace.
+> بل تُستهلك من GitHub Packages عند `^1.0.0` تحت scope الـ `@mohammadtmohsen/*`، و`chorus-core` يملكها.
+> وما يلي يصف الـ import الذي زرع `chorus-core` — وهو سجلّ الـ revision الذي جاء منه كل ملف،
+> وليس ما يعتمد عليه هذا الـ workspace اليوم. أما الحزم الخمس التي يملكها هذا الـ workspace
+> — `collaboration-protocol` و`collaboration-runtime` و`transcript` و`transport` والـ apps —
+> فلم تكن يوماً جزءاً من الـ import وتبقى هنا.
+
+The collaboration core in this workspace was imported from `workbench`, not
 reimplemented. This file records exactly what was taken, from where, and what
 has been changed since.
 
